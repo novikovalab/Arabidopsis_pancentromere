@@ -126,7 +126,7 @@ fi
 done
 ```
 ## Simulations
-We used scripts from [https://github.com/schneebergerlab/replicated-assemblies-centromere-study]: https://github.com/schneebergerlab/replicated-assemblies-centromere-study
+We used scripts from [https://github.com/schneebergerlab/replicated-assemblies-centromere-study]
 We also added blasting on every step to break the simulation if no inserted repeats left. A sample script **Centromere_simulation.sh** has dependances in replicated-assemblies-centromere-study repository. 
 
 ## Short reads map to centromere
