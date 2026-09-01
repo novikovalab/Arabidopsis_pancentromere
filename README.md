@@ -1,19 +1,22 @@
 # Arabidopsis pancentromere
 This repository contains scripts used for centromere analysis of Arabidopsis species.
 # Assembly
-```mabs-hifiasm.py --pacbio_hifi_reads Raw_reads.fastq.gz --output_folder Pref --local_busco_dataset brassicales_odb10 --threads 30 # used ploidy parameter for tetraploids
+```
+mabs-hifiasm.py --pacbio_hifi_reads Raw_reads.fastq.gz --output_folder Pref --local_busco_dataset brassicales_odb10 --threads 30 # used ploidy parameter for tetraploids
 ragtag.py scaffold  -f 100000 NT1_v2.fa Pref/The_best_assembly/assembly.fasta -o Pref_rt
 ```
 Then keep only chromosomes, not the small contigs using **Subset_only_chromosomes.py**.
 
 ## Run Helixer (gene annotation)
-```helixer_v0.3.3 Helixer.py --fasta-path Pref.fa --gff-output-path Pref_helixer.gff --lineage land_plant
+```
+helixer_v0.3.3 Helixer.py --fasta-path Pref.fa --gff-output-path Pref_helixer.gff --lineage land_plant
 ```
 ## GENESPACE
 Use **Data_preparation_for_genespace.sh** then **run_genespace3.R**.
 
 ## Tidk
-```tidk search --string TTTAGGG --output Pref --dir . Pref.fa
+```
+tidk search --string TTTAGGG --output Pref --dir . Pref.fa
 tidk plot -o Pref --tsv Pref_telomeric_repeat_windows.tsv
 ```
 
@@ -23,10 +26,11 @@ tidk plot -o Pref --tsv Pref_telomeric_repeat_windows.tsv
 ```
 
 ## EDTA
-```EDTA.pl --genome Pref.fa --force 1 --overwrite 1 --sensitive 1 --anno 1 --evaluate 1 --threads 40 --curatedlib TAIR10_TE.liban 
+```
+EDTA.pl --genome Pref.fa --force 1 --overwrite 1 --sensitive 1 --anno 1 --evaluate 1 --threads 40 --curatedlib TAIR10_TE.liban 
 ```
 
-## To see if the assembly is good load Helixer, tidk, trash, EDTA, bam to IGV and check 
+To see if the assembly is good load Helixer, tidk, trash, EDTA, bam to IGV and check 
 - small contigs with no good reads mapped (random repeats ragtaged between good contigs)
 - especially often small contigs on the chromosome ends, maybe after telomere, no contigs after telomere should stay
 - centromeres on the chromosome ends
@@ -64,7 +68,8 @@ All trash centromeric repeats should be inside. EDTA annotates them as "repeat r
 
 ## Extract repeat libraries from TRASH results
 Filter centromeres for PCAs
-```tail -n +2 all.repeats.from.Pref.fa.csv | awk -F "," '{print $8, $1, $2, $3, $4}' | sed 's/\"//g' | sed 's/ /\t/g'> all.repeats.from.Pref.bed
+```
+tail -n +2 all.repeats.from.Pref.fa.csv | awk -F "," '{print $8, $1, $2, $3, $4}' | sed 's/\"//g' | sed 's/ /\t/g'> all.repeats.from.Pref.bed
 bedtools intersect -a all.repeats.from.Pref.bed -wa -b Pref_centromeres.bed > Pref_centromere_repeats.bed
 cut -f 4 Pref_centromere_repeats.bed | sort | uniq -c | less # To identify frequent repeat sizes and filter out too long or too short. The boundaries individually for each genome. At least 100 repeats present of this repeat length.
 #[138/367)
@@ -76,19 +81,22 @@ The PCA reclassification used for the centromere repeat plot (**Big_centromere_r
 
 ## Making trees
 Subsample repeats
-```bedtools getfasta -bed <(grep pAa Repeats_with_classes.bed | shuf -n 10 ) -fi Pref.fa | sed 's/>/\>Pref_pAa/' >> Subset_repeats.fa
+```
+bedtools getfasta -bed <(grep pAa Repeats_with_classes.bed | shuf -n 10 ) -fi Pref.fa | sed 's/>/\>Pref_pAa/' >> Subset_repeats.fa
 #Align:
 linsi --adjustdirection Subset_repeats.fa > Subset_repeats_align.fa
 ```
 Here open in Ugene and trim tails that are not aligned properly and remove any sequences which make no sense (not aligned well).
 Tree:
-```iqtree -bb 1000 -s Split_pAa_and_CEN178_fin1.fa
+```
+iqtree -bb 1000 -s Split_pAa_and_CEN178_fin1.fa
 ```
 Vizualize in Itol-tree.
 
 ## BLAST
 Blasting of both canonical and non-canonical repeats to know where they are on chromosome arms (fig. S13, S15).
-```blastn -db Pref.fa -query Reference_rep.fa -outfmt "6 sseqid sstart send qseqid bitscore sseq" >> Pref_blast_rep.bed
+```
+blastn -db Pref.fa -query Reference_rep.fa -outfmt "6 sseqid sstart send qseqid bitscore sseq" >> Pref_blast_rep.bed
 bedtools intersect -v -a <(awk '{if ($2 < $3) print $0; else print $1,$3,$2,$4,$5}' Pref_blast_rep.bed | sed 's/ /\t/g') -b Pref_centromeres.bed > Pref_canonical_nocentr.bed
 #Second level of blast – blast something from outside centromeres to centromeres
 #Get fastas like this: 
@@ -99,14 +107,16 @@ blastn -db all_centromeres_only.fa -query ${ID}_nocentr.fa -outfmt "6 sseqid sst
 done < "listtoblast"
 ```
 ## 60-kmers analysis 
-```for samp in `ls all_centromeres_only.fa.split`; do
+```
+for samp in `ls all_centromeres_only.fa.split`; do
 jellyfish count -m 60 -s 100M all_centromeres_only.fa.split/$samp -o splitcen/$samp
 jellyfish dump -c splitcen/$samp | sort -k2,2rn > splitcen/$samp.counts
 done
 ```
 For A. kamchatica k-mers (fig. S20):
 chose 500 to 800 line when sorted by freqeuncy, then:
-```for kmer in `cat jf_kron_chr5_pAge1_kmers`; do
+```
+for kmer in `cat jf_kron_chr5_pAge1_kmers`; do
 seqkit locate --pattern $kmer  all_centromeres.fa | cut -f 1 | uniq  > kmer_stuff
 wc -l kmer_stuff >> kron_chr5pAge1_hits
 #filtering out something not specific, with hits on more than 51 scaffolds
@@ -131,14 +141,16 @@ Make ped files for every leaf and pollen F1 sample. Example ped file:
 X04     SRR8157565      SRR8157563      SRR8157564      0       1
 
 For leaf and pollen run this:
-```#MIND THE ORDER
+```
+#MIND THE ORDER
 vcf-subset --exclude-ref -c 25114-2,24030-4,24036-1 Pollen_AL62NT1_2n_bial.vcf.gz > X02_L.vcf.gz &
 whatshap phase --ped arabidopsis_SD_workflow/SD_phasing_workflow/workflow/peds/X01_L.ped --ref=/biodata/dep_mercier/grp_novikova/A.Lyrata/ref/Alyrata/NT1_assembly/final_NT1/NT1_220222.fasta --recombrate 4.8  -o X01_L.phased.vcf X01_L.vcf.gz 24030-4.fixmate.sort.markdup.bam 24036-1.fixmate.sort.markdup.bam /biodata/dep_mercier/grp_novikova/A.Lyrata/Robot25_lyrata_raw_novogene/bams/25114-1.fixmate.sort.markdup.bam &
 python arabidopsis_SD_workflow/SD_phasing_workflow/workflow/scripts/filter_vcf_with_stats.py Control_L.phased.vcf Control_P.phased.vcf Control_L Control_P Control_L.filtered.vcf Control_P.filtered.vcf
 ```
 
 Then we need to make a mpileup from only forward reads:
-```python arabidopsis_SD_workflow/SD_phasing_workflow/workflow/scripts/trim_reads_v4.py SRR8157566_1.paired.fq.gz SRR8157565_1.paired.fq.gz SRR8157566 SRR8157565 ./ &
+```
+python arabidopsis_SD_workflow/SD_phasing_workflow/workflow/scripts/trim_reads_v4.py SRR8157566_1.paired.fq.gz SRR8157565_1.paired.fq.gz SRR8157566 SRR8157565 ./ &
 bwa mem -t 4 /biodata/dep_mercier/grp_novikova/A.Lyrata/ref/Alyrata/NT1_assembly/final_NT1/NT1_220222.fasta AL62TE11_pollen.retrimmed.fastq | samtools view -Sb | samtools sort > AL62TE11_1_pollen.retrimmed.bam &
 bcftools mpileup -a AD --fasta-ref /biodata/dep_mercier/grp_novikova/A.Lyrata/ref/Alyrata/NT1_assembly/final_NT1/NT1_220222.fasta 25114-1.retrimmed.bam AL62TE11_1_pollen.retrimmed.bam > X01_2.mpileup &
 bcftools call -mv -Ov X01_2.mpileup | bcftools norm -m -any | bcftools filter -e 'QUAL<20 || DP<2' > x01_mpileup/X01.vcf
@@ -149,7 +161,8 @@ Now we can proceed.
 try2.map is a decoy map looking like this:
 scaffold_1      1000    0
 scaffold_1      28694250        0
-```# change index manually in the script, I also made some changes in the script
+```
+# change index manually in the script, I also made some changes in the script
 python arabidopsis_SD_workflow/SD_phasing_workflow/workflow/scripts/update_filt_vcf_depths.py X01_L.filtered.vcf X01_L x01_mpileup/
 
 python ./scripts/extract_haps_v2.py X01_L.update.vcf X01_P.update.vcf  try2.map > X01.update.haplotypes
@@ -163,18 +176,21 @@ cat X02.chr?.haplo > X02.haplotypes
 python workflow/scripts/plot_haps_v3.py X02.haplotypes X02.allmerge.window_10K.likelihoods X02.ratios.png
 ```
 ## SweeD
-```SweeD  -name WestSib -outgroup Acebennensis1 -input All_lyrata_final_allpos_bial_dipl.vcf -osf Wsib.sf -sampleList ../../Eur_lyrata/Wsib_list
+```
+SweeD  -name WestSib -outgroup Acebennensis1 -input All_lyrata_final_allpos_bial_dipl.vcf -osf Wsib.sf -sampleList ../../Eur_lyrata/Wsib_list
 /netscratch/dep_mercier/grp_novikova/mvasilarou/bin/sweed/SweeD -name Wsib_grid500 -input Wsib.sf -grid 500
 ```
 
 # Map and genotype long reads
 Mapping with winnowmap:
-```meryl count k=15 output merylDB_te8 Pref.fa
+```
+meryl count k=15 output merylDB_te8 Pref.fa
 meryl print greater-than distinct=0.9998 merylDB_pref > pref_k15.txt
 winnowmap -W pref_k15.txt -ax map-pb Pref.fa Reads.fastq.gz | samtools view -Sb | samtools sort > Pref_winnow_back.bam
 ```
 The same way we mapped to NT1 reference genome. Unforunately, most software options don't work for mapping autopolyploids. So, we use GATK and need to add read groups.
 
-```picard AddOrReplaceReadGroups  -I AL06_on_NT1.bam  -O AL08_to_NT1_rg.bam  --RGID 4  --RGLB lib1  --RGPL PACBIO  --RGPU unit1  --RGSM 20 --VALIDATION_STRINGENCY LENIENT
+```
+picard AddOrReplaceReadGroups  -I AL06_on_NT1.bam  -O AL08_to_NT1_rg.bam  --RGID 4  --RGLB lib1  --RGPL PACBIO  --RGPU unit1  --RGSM 20 --VALIDATION_STRINGENCY LENIENT
 # then GATK with --includeNonVariantSites option
 ```
